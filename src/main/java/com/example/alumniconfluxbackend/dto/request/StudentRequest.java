@@ -1,0 +1,108 @@
+package com.example.alumniconfluxbackend.dto.request;
+
+import java.util.List;
+
+public class StudentRequest {
+
+    private String fullName;
+    private String username;
+    private String email;
+    private String institutionName;
+    private Short expectedGraduationYear;
+
+    private String department;
+    private String degreeProgram;
+    private String major;
+    private Short currentSemester;
+
+    private List<String> skills;
+    private List<String> careerPreferences;
+
+    public String getInstitutionName() {
+        return institutionName;
+    }
+
+    public void setInstitutionName(String institutionName) {
+        this.institutionName = institutionName;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Short getExpectedGraduationYear() {
+        return expectedGraduationYear;
+    }
+
+    public void setExpectedGraduationYear(Short expectedGraduationYear) {
+        this.expectedGraduationYear = expectedGraduationYear;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public String getDegreeProgram() {
+        return degreeProgram;
+    }
+
+    public void setDegreeProgram(String degreeProgram) {
+        this.degreeProgram = degreeProgram;
+    }
+
+    public String getMajor() {
+        return major;
+    }
+
+    public void setMajor(String major) {
+        this.major = major;
+    }
+
+    public Short getCurrentSemester() {
+        return currentSemester;
+    }
+
+    public void setCurrentSemester(Short currentSemester) {
+        this.currentSemester = currentSemester;
+    }
+
+    public List<String> getSkills() {
+        return skills;
+    }
+
+    public void setSkills(List<String> skills) {
+        this.skills = skills;
+    }
+
+    public List<String> getCareerPreferences() {
+        return careerPreferences;
+    }
+
+    public void setCareerPreferences(List<String> careerPreferences) {
+        this.careerPreferences = careerPreferences;
+    }
+}

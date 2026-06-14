@@ -1,0 +1,169 @@
+package com.example.alumniconfluxbackend.service.impl;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.example.alumniconfluxbackend.dto.request.AlumniRequest;
+import com.example.alumniconfluxbackend.dto.response.AlumniResponse;
+import com.example.alumniconfluxbackend.model.Alumni;
+import com.example.alumniconfluxbackend.model.User;
+import com.example.alumniconfluxbackend.model.details.AlumniDetails;
+import com.example.alumniconfluxbackend.repository.AlumniRepository;
+import com.example.alumniconfluxbackend.repository.UserRepository;
+import com.example.alumniconfluxbackend.service.AlumniService;
+import com.example.alumniconfluxbackend.util.Role;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+
+@Service
+@Transactional
+public class AlumniServiceImpl implements AlumniService {
+    private final AlumniRepository alumniRepository;
+    private final UserRepository userRepository;
+
+    public AlumniServiceImpl(AlumniRepository alumniRepository,
+                             UserRepository userRepository) {
+        this.alumniRepository = alumniRepository;
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    @Transactional
+    public AlumniResponse createOrUpdateAlumni(Integer userId, AlumniRequest request) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getRole() != Role.ALUMNI) {
+            throw new RuntimeException("Only ALUMNI allowed");
+        }
+
+        Alumni alumni = alumniRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    Alumni newAlumni = new Alumni();
+                    newAlumni.setUser(user);
+                    user.setAlumni(newAlumni);
+                    return newAlumni;
+                });
+
+        alumni.setInstitutionName(request.getInstitutionName());
+        alumni.setGraduationYear(request.getGraduationYear());
+        alumni.setIndustry(request.getIndustry());
+        alumni.setCurrentCompany(request.getCurrentCompany());
+
+        if (request.getFullName() != null)
+            user.setFullName(request.getFullName());
+        if (request.getUsername() != null)
+            user.setUsername(request.getUsername());
+        if (request.getEmail() != null)
+            user.setEmail(request.getEmail());
+
+        AlumniDetails details = alumni.getDetails();
+        if (details == null) {
+            details = new AlumniDetails();
+        }
+
+        details.setJobTitle(request.getJobTitle());
+        details.setExperienceLevel(request.getExperienceLevel());
+        details.setSkills(request.getSkills());
+        details.setAchievements(request.getAchievements());
+        details.setCareerPath(request.getCareerPath());
+        details.setCertifications(request.getCertifications());
+        details.setAdvice(request.getAdvice());
+
+        alumni.setDetails(details);
+
+        alumniRepository.save(alumni);
+
+        return mapToResponse(alumni);
+    }
+
+    @Override
+    public AlumniResponse getAlumniByUserId(Integer userId) {
+
+        Alumni alumni = alumniRepository.findByUserId(userId)
+            .orElseGet(() -> {
+                Alumni emptyAlumni = new Alumni();
+                User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+                emptyAlumni.setUser(user);
+                return emptyAlumni;
+            });
+
+        return mapToResponse(alumni);
+    }
+
+    public List<AlumniResponse> getAllAlumni() {
+        return alumniRepository.findAll().stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public AlumniResponse uploadProfilePicture(Integer userId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("Profile picture file is required");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getRole() != Role.ALUMNI) {
+            throw new RuntimeException("Only alumni profile picture upload is allowed");
+        }
+
+        Alumni alumni = alumniRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    Alumni newAlumni = new Alumni();
+                    newAlumni.setUser(user);
+                    newAlumni.setInstitutionName("");
+                    user.setAlumni(newAlumni);
+                    return newAlumni;
+                });
+
+        try {
+            alumni.setProfilePicture(file.getBytes());
+            alumni.setProfilePictureContentType(file.getContentType());
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to read uploaded profile picture", ex);
+        }
+
+        alumniRepository.save(alumni);
+        return mapToResponse(alumni);
+    }
+
+    private AlumniResponse mapToResponse(Alumni a) {
+
+        AlumniResponse res = new AlumniResponse();
+        AlumniDetails details = a.getDetails();
+
+        res.setId(a.getId());
+        res.setInstitutionName(a.getInstitutionName());
+        res.setGraduationYear(a.getGraduationYear());
+        res.setIndustry(a.getIndustry());
+        res.setCurrentCompany(a.getCurrentCompany());
+
+        if (details != null) {
+            res.setJobTitle(details.getJobTitle());
+            res.setExperienceLevel(details.getExperienceLevel());
+            res.setSkills(details.getSkills());
+            res.setAchievements(details.getAchievements());
+            res.setCareerPath(details.getCareerPath());
+            res.setCertifications(details.getCertifications());
+            res.setAdvice(details.getAdvice());
+        }
+
+        res.setProfilePicture(a.getProfilePicture());
+        res.setProfilePictureContentType(a.getProfilePictureContentType());
+
+        if (a.getUser() != null) {
+            res.setFullName(a.getUser().getFullName());
+            res.setUsername(a.getUser().getUsername());
+            res.setEmail(a.getUser().getEmail());
+        }
+        res.setAvailableForMentorship(a.isAvailableForMentorship());
+
+        return res;
+    }
+}
