@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -22,7 +24,7 @@ public class AssessmentCompletionController {
 
     @GetMapping("/{userId}")
     public ResponseEntity<?> getCompletion(@PathVariable Integer userId) {
-        Optional<AssessmentCompletion> completion = completionRepository.findByUserId(userId);
+        Optional<AssessmentCompletion> completion = getLatestCompletion(userId);
         if (completion.isPresent()) {
             return ResponseEntity.ok(completion.get());
         }
@@ -36,8 +38,7 @@ public class AssessmentCompletionController {
                 return ResponseEntity.badRequest().body("UserId is required");
             }
 
-            AssessmentCompletion completion = completionRepository
-                    .findByUserId(request.getUserId())
+            AssessmentCompletion completion = getLatestCompletion(request.getUserId())
                     .orElse(new AssessmentCompletion());
 
             completion.setUserId(request.getUserId());
@@ -60,11 +61,18 @@ public class AssessmentCompletionController {
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<?> deleteCompletion(@PathVariable Integer userId) {
-        Optional<AssessmentCompletion> completion = completionRepository.findByUserId(userId);
+        Optional<AssessmentCompletion> completion = getLatestCompletion(userId);
         if (completion.isPresent()) {
             completionRepository.delete(completion.get());
             return ResponseEntity.ok().body("Completion record deleted");
         }
         return ResponseEntity.notFound().build();
+    }
+
+    private Optional<AssessmentCompletion> getLatestCompletion(Integer userId) {
+        List<AssessmentCompletion> completions = completionRepository.findAllByUserId(userId);
+        return completions.stream()
+                .max(Comparator.comparing(AssessmentCompletion::getCompletedAt)
+                        .thenComparing(AssessmentCompletion::getId));
     }
 }
